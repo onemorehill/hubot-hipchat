@@ -16,7 +16,7 @@ class HipChat extends Adapter
   run: ->
     self = @
     @options =
-      jid: 				process.env.HUBOT_HIPCHAT_JID
+      #jid: 				process.env.HUBOT_HIPCHAT_JID
       password:  	process.env.HUBOT_HIPCHAT_PASSWORD
       token:     	process.env.HUBOT_HIPCHAT_TOKEN or null
       name:      	process.env.HUBOT_HIPCHAT_NAME or "#{self.name} Bot"
