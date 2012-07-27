@@ -86,6 +86,8 @@ class HipChat extends Adapter
         bot.connect()
         @bot = bot
         self.emit "connected"
+      else
+        console.log "Can not be invite to rooms"
 
   # Convenience HTTP Methods for posting on behalf of the rooms"d user
   get: (path, callback) ->
