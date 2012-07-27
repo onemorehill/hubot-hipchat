@@ -16,13 +16,14 @@ class HipChat extends Adapter
   run: ->
     self = @
     @options =
-      jid:      process.env.HUBOT_HIPCHAT_JID
-      password: process.env.HUBOT_HIPCHAT_PASSWORD
-      token:    process.env.HUBOT_HIPCHAT_TOKEN or null
-      name:     process.env.HUBOT_HIPCHAT_NAME or "#{self.name} Bot"
-      rooms:    process.env.HUBOT_HIPCHAT_ROOMS or "@All"
-      debug:    process.env.HUBOT_HIPCHAT_DEBUG or false
-      host:     process.env.HUBOT_HIPCHAT_HOST or null
+      jid: 				process.env.HUBOT_HIPCHAT_JID
+      password:  	process.env.HUBOT_HIPCHAT_PASSWORD
+      token:     	process.env.HUBOT_HIPCHAT_TOKEN or null
+      name:      	process.env.HUBOT_HIPCHAT_NAME or "#{self.name} Bot"
+      rooms:     	process.env.HUBOT_HIPCHAT_ROOMS or "@All"
+      debug:     	process.env.HUBOT_HIPCHAT_DEBUG or false
+      host:      	process.env.HUBOT_HIPCHAT_HOST or null
+	    auto-join: 	process.env.HUBOT_HIPCHAT_HOST or false
 
     console.log "Options:", @options
     bot = new Wobot(jid: @options.jid, name: @options.name, password: @options.password, debug: @options.debug == 'true', host: @options.host)
@@ -78,15 +79,18 @@ class HipChat extends Adapter
       self.receive new TextMessage(author, "#{self.robot.name}: #{message}")
 
     # Join rooms automatically when invited
-    bot.onInvite (room_jid, from_jid, message) =>
-      console.log "Got invite to #{room_jid} from #{from_jid} - joining"
-      bot.join room_jid
+ 		if @options.auto-join is true
+	    bot.onInvite (room_jid, from_jid, message) =>
+	      console.log "Got invite to #{room_jid} from #{from_jid} - joining"
+	      bot.join room_jid
 
-    bot.connect()
+	    bot.connect()
 
-    @bot = bot
+	    @bot = bot
 
-    self.emit "connected"
+    	self.emit "connected"
+		else
+			console.log "Cannot join room: ", room_jid
 
   # Convenience HTTP Methods for posting on behalf of the token"d user
   get: (path, callback) ->
