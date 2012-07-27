@@ -16,14 +16,14 @@ class HipChat extends Adapter
   run: ->
     self = @
     @options =
-      #jid: 				process.env.HUBOT_HIPCHAT_JID
+      #jid: 	    process.env.HUBOT_HIPCHAT_JID
       password:  	process.env.HUBOT_HIPCHAT_PASSWORD
       token:     	process.env.HUBOT_HIPCHAT_TOKEN or null
       name:      	process.env.HUBOT_HIPCHAT_NAME or "#{self.name} Bot"
       rooms:     	process.env.HUBOT_HIPCHAT_ROOMS or "@All"
       debug:     	process.env.HUBOT_HIPCHAT_DEBUG or false
-      host:      	process.env.HUBOT_HIPCHAT_HOST or null
-	    auto-join: 	process.env.HUBOT_HIPCHAT_AUTOJOIN or false
+      host:       process.env.HUBOT_HIPCHAT_HOST or null
+      auto-join:  process.env.HUBOT_HIPCHAT_AUTOJOIN or false
 
     console.log "Options:", @options
     bot = new Wobot(jid: @options.jid, name: @options.name, password: @options.password, debug: @options.debug == 'true', host: @options.host)
