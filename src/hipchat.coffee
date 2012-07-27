@@ -82,10 +82,10 @@ class HipChat extends Adapter
     bot.onInvite (room_jid, from_jid, message) =>
       console.log "Got invite to #{room_jid} from #{from_jid} - joining"
       if @options.auto-join is true      
-	      bot.join room_jid
-	      bot.connect()
-	      @bot = bot
-	      self.emit "connected"
+        bot.join room_jid
+        bot.connect()
+        @bot = bot
+        self.emit "connected"
 
   # Convenience HTTP Methods for posting on behalf of the rooms"d user
   get: (path, callback) ->
