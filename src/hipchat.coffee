@@ -23,7 +23,7 @@ class HipChat extends Adapter
       rooms:     	process.env.HUBOT_HIPCHAT_ROOMS or "@All"
       debug:     	process.env.HUBOT_HIPCHAT_DEBUG or false
       host:      	process.env.HUBOT_HIPCHAT_HOST or null
-	    auto-join: 	process.env.HUBOT_HIPCHAT_HOST or false
+	    auto-join: 	process.env.HUBOT_HIPCHAT_AUTOJOIN or false
 
     console.log "Options:", @options
     bot = new Wobot(jid: @options.jid, name: @options.name, password: @options.password, debug: @options.debug == 'true', host: @options.host)
