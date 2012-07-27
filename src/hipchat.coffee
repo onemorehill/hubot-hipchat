@@ -83,12 +83,13 @@ class HipChat extends Adapter
       console.log "Got invite to #{room_jid} from #{from_jid} - joining"
       if @options.autojoin    
         bot.join room_jid
-        bot.connect()
-        @bot = bot
-        self.emit "connected"
       else
         console.log "Can not be invite to rooms"
-
+        
+    bot.connect()
+    @bot = bot
+    self.emit "connected"
+        
   # Convenience HTTP Methods for posting on behalf of the rooms"d user
   get: (path, callback) ->
     @request "GET", path, null, callback
