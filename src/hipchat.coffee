@@ -89,8 +89,10 @@ class HipChat extends Adapter
 	    @bot = bot
 
 	    self.emit "connected"
+		else
+			console.log "Can not room"
 
-  # Convenience HTTP Methods for posting on behalf of the token"d user
+  # Convenience HTTP Methods for posting on behalf of the rooms"d user
   get: (path, callback) ->
     @request "GET", path, null, callback
 
