@@ -81,7 +81,7 @@ class HipChat extends Adapter
     # Join rooms automatically when invited
     bot.onInvite (room_jid, from_jid, message) =>
       console.log "Got invite to #{room_jid} from #{from_jid} - joining"
-      if @options.autojoin is true      
+      if @options.autojoin    
         bot.join room_jid
         bot.connect()
         @bot = bot
