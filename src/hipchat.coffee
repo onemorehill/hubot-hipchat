@@ -2,6 +2,7 @@
 HTTPS = require "https"
 {inspect} = require "util"
 Connector = require "./connector"
+promise = require "./promises"
 
 class HipChat extends Adapter
 
@@ -52,6 +53,8 @@ class HipChat extends Adapter
     host = if @options.host then @options.host else "hipchat.com"
     @logger.info "Connecting HipChat adapter..."
 
+    init = promise()
+
     connector.onConnect =>
       @logger.info "Connected to #{host} as @#{connector.mention_name}"
 
@@ -61,77 +64,92 @@ class HipChat extends Adapter
       # Tell Hubot we're connected so it can load scripts
       @emit "connected"
 
-      # Join requested rooms
-      if @options.rooms is "All" or @options.rooms is "@All"
-        connector.getRooms (err, rooms, stanza) =>
-          if rooms
-            for room in rooms
-              @logger.info "Joining #{room.jid}"
-              connector.join room.jid
-          else
-            @logger.error "Can't list rooms: #{err}"
-      else
-        for room_jid in @options.rooms.split ","
-          @logger.info "Joining #{room_jid}"
-          connector.join room_jid
-
       # Fetch user info
       connector.getRoster (err, users, stanza) =>
-        if err
-          return @logger.error "Can't list users: #{err}"
-        for user in users
-          @robot.brain.userForId @userIdFromJid(user.jid), user
+        return init.reject err if err
+        init.resolve users
 
-    connector.onDisconnect =>
-      @logger.info "Disconnected from #{host}"
+      init
+        .done (users) =>
+          # Save users to brain
+          for user in users
+            user.id = @userIdFromJid user.jid
+            @robot.brain.userForId user.id, user
+          # Join requested rooms
+          if @options.rooms is "All" or @options.rooms is "@All"
+            connector.getRooms (err, rooms, stanza) =>
+              if rooms
+                for room in rooms
+                  @logger.info "Joining #{room.jid}"
+                  connector.join room.jid
+              else
+                @logger.error "Can't list rooms: #{errmsg err}"
+          # Join all rooms
+          else
+            for room_jid in @options.rooms.split ","
+              @logger.info "Joining #{room_jid}"
+              connector.join room_jid
+        .fail (err) =>
+          @logger.error "Can't list users: #{errmsg err}" if err
 
-    connector.onError =>
-      @logger.error [].slice.call(arguments).map(inspect).join(", ")
+      handleMessage = (opts) =>
+        # buffer message events until the roster fetch completes
+        # to ensure user data is properly loaded
+        init.done =>
+          {getAuthor, message, reply_to, room} = opts
+          author = getAuthor()
+          author.reply_to = reply_to
+          author.room = room
+          @receive new TextMessage(author, message)
 
-    handleMessage = (opts) =>
-      {message, from, reply_to, room} = opts
-      author = @robot.brain.userForName(from) or {}
-      author.name = from
-      author.reply_to = reply_to
-      author.room = room
+      connector.onMessage (channel, from, message) =>
+        # reformat leading @mention name to be like "name: message" which is
+        # what hubot expects
+        mention_name = connector.mention_name
+        regex = new RegExp "^@#{mention_name}\\b", "i"
+        message = message.replace regex, "#{mention_name}: "
+        handleMessage
+          getAuthor: => @robot.brain.userForName(from)
+          message: message
+          reply_to: channel
+          room: @roomNameFromJid(channel)
 
-      # reformat leading @mention name to be like "name: message" which is
-      # what hubot expects
-      mention_name = connector.mention_name
-      regex = new RegExp "^@#{mention_name}\\b", "i"
-      hubot_msg = message.replace regex, "#{mention_name}: "
+      connector.onPrivateMessage (from, message) =>
+        # remove leading @mention name if present and format the message like
+        # "name: message" which is what hubot expects
+        mention_name = connector.mention_name
+        regex = new RegExp "^@#{mention_name}\\b", "i"
+        message = "#{mention_name}: #{message.replace regex, ""}"
+        handleMessage
+          getAuthor: => @robot.brain.userForId(@userIdFromJid from)
+          message: message
+          reply_to: from
 
-      @receive new TextMessage(author, hubot_msg)
+      changePresence = (PresenceMessage, user_jid, room_jid) =>
+        # buffer presence events until the roster fetch completes
+        # to ensure user data is properly loaded
+        init.done =>
+          user = @robot.brain.userForId(@userIdFromJid(user_jid)) or {}
+          if user
+            user.room = room_jid
+            @receive new PresenceMessage(user)
 
-    connector.onMessage (channel, from, message) =>
-      handleMessage
-        message: message
-        from: from
-        reply_to: channel
-        room: @roomNameFromJid(channel)
+      connector.onEnter (user_jid, room_jid) =>
+        changePresence EnterMessage, user_jid, room_jid
 
-    connector.onPrivateMessage (from, message) =>
-      handleMessage
-        message: message
-        from: from
-        reply_to: from
+      connector.onLeave (user_jid, room_jid) ->
+        changePresence LeaveMessage, user_jid, room_jid
 
-    connector.onInvite (room_jid, from_jid, message) =>
-      action = if @options.autojoin then "joining" else "ignoring"
-      @logger.info "Got invite to #{room_jid} from #{from_jid} - #{action}"
-      connector.join room_jid if @options.autojoin
+      connector.onDisconnect =>
+        @logger.info "Disconnected from #{host}"
 
-    changePresence = (PresenceMessage, user_jid, room_jid) =>
-      user = @robot.brain.userForId(@userIdFromJid(user_jid)) or {}
-      if user
-        user.room = room_jid
-        @receive new PresenceMessage(user)
+      connector.onError =>
+        @logger.error [].slice.call(arguments).map(inspect).join(", ")
 
-    connector.onEnter (user_jid, room_jid) ->
-      changePresence EnterMessage, user_jid, room_jid
-
-    connector.onLeave (user_jid, room_jid) ->
-      changePresence LeaveMessage, user_jid, room_jid
+      connector.onInvite (room_jid, from_jid, message) =>
+        action = if @options.autojoin then "joining" else "ignoring"
+        @logger.info "Got invite to #{room_jid} from #{from_jid} - #{action}"
+        connector.join room_jid if @options.autojoin
 
     connector.connect()
 
@@ -199,6 +217,9 @@ class HipChat extends Adapter
       @logger.error err
       @logger.error err.stack if err.stack
       callback err
+
+errmsg = (err) ->
+  err + (if err.stack then '\n' + err.stack else '')
 
 exports.use = (robot) ->
   new HipChat robot

@@ -18,7 +18,7 @@ This is a HipChat-specific version of the more general [instructions in the Hubo
 
 1. Install `hubot` from npm, if you don't already have it:
 
-        % npm install --global hubot
+        % npm install --global coffee-script hubot@v2.5.1
 
 1. Create a new `hubot` if necessary:
 
@@ -112,7 +112,7 @@ Optional. Use to force the host to open the XMPP connection to.
 
 ### HUBOT\_HIPCHAT\_JOIN\_ROOMS\_ON\_INVITE
 
-Optional.  Setting to `false` will prevent the HipChat adapter grom auto-joining rooms when invited.
+Optional.  Setting to `false` will prevent the HipChat adapter from auto-joining rooms when invited.
 
 ### HUBOT\_LOG\_LEVEL
 

@@ -1,6 +1,6 @@
 {
   "name": "hubot-hipchat",
-  "version": "2.5.1-2",
+  "version": "2.5.1-4",
   "author": "HipChat <support@hipchat.com>",
   "description": "A Hipchat adapter for Hubot",
   "keywords": [
@@ -24,6 +24,7 @@
   "main": "./src/hipchat",
   "dependencies": {
     "node-xmpp": "~0.3.2",
-    "underscore": "~1.4.4"
+    "underscore": "~1.4.4",
+    "rsvp": "~1.2.0"
   }
 }
